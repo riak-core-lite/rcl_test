@@ -1,1 +1,9 @@
-# rcl_test
+rcl_test
+=====
+
+An OTP library
+
+Build
+-----
+
+    $ rebar3 compile
