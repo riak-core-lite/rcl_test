@@ -1,14 +1,16 @@
 -module(rcl_test).
 
--export([at_init_testsuite/0, pmap/2, init_single_dc/4, start_node/4]).
+-export([at_init_testsuite/0, pmap/2, init_nodes/4, start_node/4,
+         add_nodes_to_cluster/2]).
 
-init_single_dc(Suite, Config, CommonConfig, NodeConfig) ->
+init_nodes(Suite, Config, CommonConfig, NodesConfig) ->
     ct:pal("[~p]", [Suite]),
     at_init_testsuite(),
 
     StartDCs =
         fun (Nodes) ->
                 pmap(fun (N) ->
+                             NodeConfig = maps:get(N, NodesConfig),
                              {_Status, Node} = start_node(N, Config, CommonConfig, NodeConfig),
                              Node
                      end,
@@ -18,10 +20,9 @@ init_single_dc(Suite, Config, CommonConfig, NodeConfig) ->
         pmap(fun (N) ->
                      StartDCs(N)
              end,
-             [[dev1]]),
-    [Node] = Nodes,
+             [maps:keys(NodesConfig)]),
 
-    [{clusters, [Nodes]}, {nodes, Nodes}, {node, Node} | Config].
+    [{clusters, [Nodes]}, {nodes, Nodes} | Config].
 
 at_init_testsuite() ->
     {ok, Hostname} = inet:gethostname(),
@@ -33,6 +34,9 @@ at_init_testsuite() ->
         {error, {{already_started, _}, _}} ->
             ok
     end.
+
+add_nodes_to_cluster(NodeTarget, NodesToAdd) ->
+    rcl_cluster_manager:add_nodes_to_cluster(NodeTarget, NodesToAdd).
 
 -spec pmap(fun(), list()) -> list().
 pmap(F, L) ->
